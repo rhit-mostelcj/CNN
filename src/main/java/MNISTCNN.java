@@ -2,76 +2,99 @@ import javax.swing.*;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MNISTCNN {
-
-    private static final int TESTINGSIZE = 10;
 
     public static void main(String[] args) {
         String trainImagesPath = "train-images-idx3-ubyte";
         String trainLabelsPath = "train-labels-idx1-ubyte";
         try {
-            readImages(trainImagesPath);
-            readLabels(trainLabelsPath);
+            List<int[][]> images = readImages(trainImagesPath);
+            List<Integer> labels = readLabels(trainLabelsPath);
+
+            int c = 0;
+            for (int[][] image : images) {
+                if (c == 10) {
+                    break;
+                }
+                displayImage(image, image[0].length, image.length);
+                c++;
+            }
+
+            c = 0;
+            for (int label : labels) {
+                if (c == 10) {
+                    break;
+                }
+
+                System.out.println("Label " + (c + 1) + ": " + label);
+                c++;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void readImages(String filePath) throws IOException {
-        FileInputStream fis = new FileInputStream(filePath);
+    public static List<int[][]> readImages(String filePath) throws IOException {
+        List<int[][]> allImages = new ArrayList<>();
 
-        // Read header
-        int magicNumber = readInt(fis);
-        int numberOfImages = readInt(fis);
-        int numberOfRows = readInt(fis);
-        int numberOfColumns = readInt(fis);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filePath))) {
 
-        numberOfImages = TESTINGSIZE;
+            // Read header
+            int magicNumber = readInt(bis);
+            int numberOfImages = readInt(bis);
+            int numberOfRows = readInt(bis);
+            int numberOfColumns = readInt(bis);
 
-        System.out.println("Magic Number: " + magicNumber);
-        System.out.println("Number of Images: " + numberOfImages);
-        System.out.println("Image Size: " + numberOfRows + "x" + numberOfColumns);
+            System.out.println("Magic Number: " + magicNumber);
+            System.out.println("Number of Images: " + numberOfImages);
+            System.out.println("Image Size: " + numberOfRows + "x" + numberOfColumns);
 
-        // Read images
-        for (int i = 0; i < numberOfImages; i++) {
-            int[][] image = new int[numberOfRows][numberOfColumns];
-            for (int row = 0; row < numberOfRows; row++) {
-                for (int col = 0; col < numberOfColumns; col++) {
-                    image[row][col] = fis.read() & 0xFF; // Convert to unsigned byte
+            // Read images
+            for (int i = 0; i < numberOfImages; i++) {
+                int[][] image = new int[numberOfRows][numberOfColumns];
+                for (int row = 0; row < numberOfRows; row++) {
+                    for (int col = 0; col < numberOfColumns; col++) {
+                        image[row][col] = bis.read() & 0xFF;
+                    }
                 }
+                allImages.add(image);
             }
-            // Process the image here (e.g., display or save it)
-            System.out.println("Read image " + (i + 1));
-            displayImage(image, numberOfColumns, numberOfRows);
+
         }
 
-        fis.close();
+        return allImages;
     }
 
-    public static void readLabels(String filePath) throws IOException {
-        FileInputStream fis = new FileInputStream(filePath);
+    public static List<Integer> readLabels(String filePath) throws IOException {
+        List<Integer> allLabels = new ArrayList<>();
 
-        // Read header
-        int magicNumber = readInt(fis);
-        int numberOfItems = readInt(fis);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filePath))) {
 
-        numberOfItems = TESTINGSIZE;
+            // Read header
+            int magicNumber = readInt(bis);
+            int numberOfItems = readInt(bis);
 
-        System.out.println("Magic Number: " + magicNumber);
-        System.out.println("Number of Labels: " + numberOfItems);
+//            numberOfItems = TESTINGSIZE;
 
-        // Read labels
-        for (int i = 0; i < numberOfItems; i++) {
-            int label = fis.read() & 0xFF; // Convert to unsigned byte
-            System.out.println("Label " + (i + 1) + ": " + label);
+            System.out.println("Magic Number: " + magicNumber);
+            System.out.println("Number of Labels: " + numberOfItems);
+
+            // Read labels
+            for (int i = 0; i < numberOfItems; i++) {
+                int label = bis.read() & 0xFF; // Convert to unsigned byte
+                allLabels.add(label);
+            }
+
         }
 
-        fis.close();
+        return allLabels;
     }
 
-    private static int readInt(FileInputStream fis) throws IOException {
-        return (fis.read() << 24) | (fis.read() << 16) | (fis.read() << 8) | fis.read();
+    private static int readInt(BufferedInputStream bis) throws IOException {
+        return (bis.read() << 24) | (bis.read() << 16) | (bis.read() << 8) | bis.read();
     }
 
     public static void displayImage(int[][] image, int width, int height) {
