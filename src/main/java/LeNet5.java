@@ -13,15 +13,18 @@ public class LeNet5 {
     private static final int STRIDE_S4 = 2;
     private static final int NUM_FEATURE_MAPS_C5 = 120;
     private static final int FILTER_SIZE_C5 = 5;
+    private static final int NUM_UNITS_F6 = 84;
 
     private List<int[][]> images;
     private List<Integer> labels;
-    private double[][][] filtersC1 = new double[NUM_FEATURE_MAPS_C1][FILTER_SIZE_C1][FILTER_SIZE_C1];
-    private double[][][][] filtersC3 = new double[NUM_FEATURE_MAPS_C3][NUM_FEATURE_MAPS_C1][FILTER_SIZE_C3][FILTER_SIZE_C3];
-    private double[][][][] filtersC5 = new double[NUM_FEATURE_MAPS_C5][NUM_FEATURE_MAPS_C3][FILTER_SIZE_C5][FILTER_SIZE_C5];
+    private double[][][] weightsC1 = new double[NUM_FEATURE_MAPS_C1][FILTER_SIZE_C1][FILTER_SIZE_C1];
+    private double[][][][] weightsC3 = new double[NUM_FEATURE_MAPS_C3][NUM_FEATURE_MAPS_C1][FILTER_SIZE_C3][FILTER_SIZE_C3];
+    private double[][][][] weightsC5 = new double[NUM_FEATURE_MAPS_C5][NUM_FEATURE_MAPS_C3][FILTER_SIZE_C5][FILTER_SIZE_C5];
+    private double[][] weightsF6 = new double[NUM_UNITS_F6][NUM_FEATURE_MAPS_C5];
     private double[] biasesC1 = new double[NUM_FEATURE_MAPS_C1];
     private double[] biasesC3 = new double[NUM_FEATURE_MAPS_C3];
     private double[] biasesC5 = new double[NUM_FEATURE_MAPS_C5];
+    private double[] biasesF6 = new double[NUM_UNITS_F6];
 
 
     public LeNet5(List<int[][]> images, List<Integer> labels) {
@@ -34,7 +37,7 @@ public class LeNet5 {
         for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
             for (int i = 0; i < FILTER_SIZE_C1; i++) {
                 for (int j = 0; j < FILTER_SIZE_C1; j++) {
-                    filtersC1[f][i][j] = Math.random() * 0.1 - 0.05;
+                    weightsC1[f][i][j] = Math.random() * 0.1 - 0.05;
                 }
             }
             biasesC1[f] = Math.random() * 0.1 - 0.05;
@@ -44,7 +47,7 @@ public class LeNet5 {
             for (int s = 0; s < NUM_FEATURE_MAPS_C1; s++) {
                 for (int i = 0; i < FILTER_SIZE_C3; i++) {
                     for (int j = 0; j < FILTER_SIZE_C3; j++) {
-                        filtersC3[f][s][i][j] = Math.random() * 0.1 - 0.05;
+                        weightsC3[f][s][i][j] = Math.random() * 0.1 - 0.05;
                     }
                 }
             }
@@ -55,11 +58,18 @@ public class LeNet5 {
             for (int s = 0; s < NUM_FEATURE_MAPS_C3; s++) {
                 for (int i = 0; i < FILTER_SIZE_C5; i++) {
                     for (int j = 0; j < FILTER_SIZE_C5; j++) {
-                        filtersC5[f][s][i][j] = Math.random() * 0.1 - 0.05;
+                        weightsC5[f][s][i][j] = Math.random() * 0.1 - 0.05;
                     }
                 }
             }
             biasesC5[f] = Math.random() * 0.1 - 0.05;
+        }
+
+        for (int i = 0; i < NUM_UNITS_F6; i++) {
+            for (int j = 0; j < NUM_FEATURE_MAPS_C5; j++) {
+                weightsF6[i][j] = Math.random() * 0.1 - 0.05;
+            }
+            biasesF6[i] = Math.random() * 0.1 - 0.05;
         }
     }
 
@@ -115,7 +125,7 @@ public class LeNet5 {
 
                     for (int fi = 0; fi < FILTER_SIZE_C1; fi++) {
                         for (int fj = 0; fj < FILTER_SIZE_C1; fj++) {
-                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj];
+                            sum += inputImage[i + fi][j + fj] * weightsC1[f][fi][fj];
                         }
                     }
 
@@ -190,7 +200,7 @@ public class LeNet5 {
                     for (int connectedMap : connectivity[f]) {
                         for (int fi = 0; fi < FILTER_SIZE_C3; fi++) {
                             for (int fj = 0; fj < FILTER_SIZE_C3; fj++) {
-                                sum += inputFeatureMaps[connectedMap][i + fi][j + fj] * filtersC3[f][connectedMap][fi][fj];
+                                sum += inputFeatureMaps[connectedMap][i + fi][j + fj] * weightsC3[f][connectedMap][fi][fj];
                             }
                         }
                     }
@@ -240,7 +250,7 @@ public class LeNet5 {
             for (int s = 0; s < NUM_FEATURE_MAPS_C3; s++) {
                 for (int fi = 0; fi < FILTER_SIZE_C5; fi++) {
                     for (int fj = 0; fj < FILTER_SIZE_C5; fj++) {
-                        sum += inputFeatureMaps[s][fi][fj] * filtersC5[f][s][fi][fj];
+                        sum += inputFeatureMaps[s][fi][fj] * weightsC5[f][s][fi][fj];
                     }
                 }
             }
@@ -251,6 +261,23 @@ public class LeNet5 {
         }
 
         return outputFeatureMaps;
+    }
+
+    public double[] layerF6(double[] inputVector) {
+        double[] outputVector = new double[NUM_UNITS_F6];
+
+        for (int i = 0; i < NUM_UNITS_F6; i++) {
+            double sum = 0.0;
+
+            for (int j = 0; j < NUM_FEATURE_MAPS_C5; j++) {
+                sum += weightsF6[i][j] * inputVector[j];
+            }
+            sum += biasesF6[i];
+
+            outputVector[i] = activation(sum);
+        }
+
+        return outputVector;
     }
 
 }
