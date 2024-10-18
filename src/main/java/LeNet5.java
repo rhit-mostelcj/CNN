@@ -5,6 +5,8 @@ public class LeNet5 {
     private static final int PADDING = 2;
     private static final int NUM_FILTERS_C1 = 6;
     private static final int FILTER_SIZE_C1 = 5;
+    private static final int POOL_SIZE_S2 = 2;
+    private static final int STRIDE_S2 = 2;
 
     private List<int[][]> images;
     private List<Integer> labels;
@@ -69,36 +71,24 @@ public class LeNet5 {
         return Math.tanh(a);
     }
 
-    // Apply the tanh activation function element-wise
-    private double tanh(double x) {
-        return Math.tanh(x);  // tanh activation function
-    }
-
-    // Perform 2D convolution operation
     public double[][][] convLayerC1(double[][] inputImage) {
         int inputSize = inputImage.length;
-        int outputSize = inputSize - FILTER_SIZE_C1 + 1;
+        int outputSize = inputSize - FILTER_SIZE_C1 + 1; // TODO: consider calculating with the stride
         double[][][] outputFeatureMaps = new double[NUM_FILTERS_C1][outputSize][outputSize];
 
-        // For each filter
         for (int f = 0; f < NUM_FILTERS_C1; f++) {
-            // Convolve filter f with the input image
             for (int i = 0; i < outputSize; i++) {
                 for (int j = 0; j < outputSize; j++) {
                     double sum = 0.0;
 
-                    // Perform element-wise multiplication (convolution) with the filter
                     for (int fi = 0; fi < FILTER_SIZE_C1; fi++) {
                         for (int fj = 0; fj < FILTER_SIZE_C1; fj++) {
-                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj];
+                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj]; // TODO: consider using stride
                         }
                     }
 
-                    // Add the bias term
                     sum += biasesC1[f];
-
-                    // Apply tanh activation function
-                    outputFeatureMaps[f][i][j] = tanh(sum);
+                    outputFeatureMaps[f][i][j] = activation(sum);
                 }
             }
         }
@@ -106,14 +96,30 @@ public class LeNet5 {
         return outputFeatureMaps;
     }
 
-    // Helper method to print feature maps for debugging purposes
-    private void printFeatureMap(double[][] featureMap) {
-        for (int i = 0; i < featureMap.length; i++) {
-            for (int j = 0; j < featureMap[i].length; j++) {
-                System.out.printf("%.2f ", featureMap[i][j]);
+    public double[][][] poolLayerS2(double[][][] inputFeatureMaps) {
+        int numFeatureMaps = inputFeatureMaps.length;
+        int inputSize = inputFeatureMaps[0].length;
+        int outputSize = inputSize / POOL_SIZE_S2; // TODO: consider calculating with the stride
+
+        double[][][] outputFeatureMaps = new double[numFeatureMaps][outputSize][outputSize];
+
+        for (int f = 0; f < numFeatureMaps; f++) {
+            for (int i = 0; i < outputSize; i++) {
+                for (int j = 0; j < outputSize; j++) {
+                    double sum = 0.0;
+
+                    for (int pi = 0; pi < POOL_SIZE_S2; pi++) {
+                        for (int pj = 0; pj < POOL_SIZE_S2; pj++) {
+                            sum += inputFeatureMaps[f][i * STRIDE_S2 + pi][j * STRIDE_S2 + pj];
+                        }
+                    }
+
+                    outputFeatureMaps[f][i][j] = sum / (POOL_SIZE_S2 * POOL_SIZE_S2);
+                }
             }
-            System.out.println();
         }
+
+        return outputFeatureMaps;
     }
 
 }
