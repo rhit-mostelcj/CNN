@@ -14,6 +14,7 @@ public class LeNet5 {
     private static final int NUM_FEATURE_MAPS_C5 = 120;
     private static final int FILTER_SIZE_C5 = 5;
     private static final int NUM_UNITS_F6 = 84;
+    private static final int NUM_OUTPUT_CLASSES = 10;
 
     private List<int[][]> images;
     private List<Integer> labels;
@@ -21,10 +22,12 @@ public class LeNet5 {
     private double[][][][] weightsC3 = new double[NUM_FEATURE_MAPS_C3][NUM_FEATURE_MAPS_C1][FILTER_SIZE_C3][FILTER_SIZE_C3];
     private double[][][][] weightsC5 = new double[NUM_FEATURE_MAPS_C5][NUM_FEATURE_MAPS_C3][FILTER_SIZE_C5][FILTER_SIZE_C5];
     private double[][] weightsF6 = new double[NUM_UNITS_F6][NUM_FEATURE_MAPS_C5];
+    private double[][] weightsOutput = new double[NUM_OUTPUT_CLASSES][NUM_UNITS_F6];
     private double[] biasesC1 = new double[NUM_FEATURE_MAPS_C1];
     private double[] biasesC3 = new double[NUM_FEATURE_MAPS_C3];
     private double[] biasesC5 = new double[NUM_FEATURE_MAPS_C5];
     private double[] biasesF6 = new double[NUM_UNITS_F6];
+//    private double[] biasesOutput = new double[NUM_OUTPUT_CLASSES];
 
 
     public LeNet5(List<int[][]> images, List<Integer> labels) {
@@ -70,6 +73,13 @@ public class LeNet5 {
                 weightsF6[i][j] = Math.random() * 0.1 - 0.05;
             }
             biasesF6[i] = Math.random() * 0.1 - 0.05;
+        }
+
+        for (int i = 0; i < NUM_OUTPUT_CLASSES; i++) {
+            for (int j = 0; j < NUM_UNITS_F6; j++) {
+                weightsOutput[i][j] = Math.random() * 0.1 - 0.05;
+            }
+//            biasesOutput[i] = Math.random() * 0.1 - 0.05;
         }
     }
 
@@ -275,6 +285,23 @@ public class LeNet5 {
             sum += biasesF6[i];
 
             outputVector[i] = activation(sum);
+        }
+
+        return outputVector;
+    }
+
+    public double[] layerOutput(double[] inputVector) {
+        int inputSize = inputVector.length;
+        double[] outputVector = new double[NUM_OUTPUT_CLASSES];
+
+        for (int i = 0; i < NUM_OUTPUT_CLASSES; i++) {
+            double sum = 0.0;
+
+            for (int j = 0; j < inputSize; j++) {
+                sum += Math.pow(inputVector[j] - weightsOutput[i][j], 2);
+            }
+
+            outputVector[i] = sum;
         }
 
         return outputVector;
