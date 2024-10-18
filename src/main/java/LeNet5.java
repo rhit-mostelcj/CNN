@@ -65,4 +65,55 @@ public class LeNet5 {
         return newImage;
     }
 
+    private double activation(double a) {
+        return Math.tanh(a);
+    }
+
+    // Apply the tanh activation function element-wise
+    private double tanh(double x) {
+        return Math.tanh(x);  // tanh activation function
+    }
+
+    // Perform 2D convolution operation
+    public double[][][] convLayerC1(double[][] inputImage) {
+        int inputSize = inputImage.length;
+        int outputSize = inputSize - FILTER_SIZE_C1 + 1;
+        double[][][] outputFeatureMaps = new double[NUM_FILTERS_C1][outputSize][outputSize];
+
+        // For each filter
+        for (int f = 0; f < NUM_FILTERS_C1; f++) {
+            // Convolve filter f with the input image
+            for (int i = 0; i < outputSize; i++) {
+                for (int j = 0; j < outputSize; j++) {
+                    double sum = 0.0;
+
+                    // Perform element-wise multiplication (convolution) with the filter
+                    for (int fi = 0; fi < FILTER_SIZE_C1; fi++) {
+                        for (int fj = 0; fj < FILTER_SIZE_C1; fj++) {
+                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj];
+                        }
+                    }
+
+                    // Add the bias term
+                    sum += biasesC1[f];
+
+                    // Apply tanh activation function
+                    outputFeatureMaps[f][i][j] = tanh(sum);
+                }
+            }
+        }
+
+        return outputFeatureMaps;
+    }
+
+    // Helper method to print feature maps for debugging purposes
+    private void printFeatureMap(double[][] featureMap) {
+        for (int i = 0; i < featureMap.length; i++) {
+            for (int j = 0; j < featureMap[i].length; j++) {
+                System.out.printf("%.2f ", featureMap[i][j]);
+            }
+            System.out.println();
+        }
+    }
+
 }
