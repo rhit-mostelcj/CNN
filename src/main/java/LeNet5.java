@@ -3,15 +3,21 @@ import java.util.List;
 public class LeNet5 {
 
     private static final int PADDING = 2;
-    private static final int NUM_FILTERS_C1 = 6;
+    private static final int NUM_FEATURE_MAPS_C1 = 6;
     private static final int FILTER_SIZE_C1 = 5;
     private static final int POOL_SIZE_S2 = 2;
     private static final int STRIDE_S2 = 2;
+    private static final int NUM_FEATURE_MAPS_C3 = 16;
+    private static final int FILTER_SIZE_C3 = 5;
+    private static final int POOL_SIZE_S4 = 2;
+    private static final int STRIDE_S4 = 2;
 
     private List<int[][]> images;
     private List<Integer> labels;
-    private double[][][] filtersC1 = new double[NUM_FILTERS_C1][FILTER_SIZE_C1][FILTER_SIZE_C1];
-    private double[] biasesC1 = new double[NUM_FILTERS_C1];
+    private double[][][] filtersC1 = new double[NUM_FEATURE_MAPS_C1][FILTER_SIZE_C1][FILTER_SIZE_C1];
+    private double[][][][] filtersC3 = new double[NUM_FEATURE_MAPS_C3][NUM_FEATURE_MAPS_C1][FILTER_SIZE_C3][FILTER_SIZE_C3];
+    private double[] biasesC1 = new double[NUM_FEATURE_MAPS_C1];
+    private double[] biasesC3 = new double[NUM_FEATURE_MAPS_C3];
 
 
     public LeNet5(List<int[][]> images, List<Integer> labels) {
@@ -21,13 +27,24 @@ public class LeNet5 {
     }
 
     private void initializeFiltersAndBiases() {
-        for (int f = 0; f < NUM_FILTERS_C1; f++) {
+        for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
             for (int i = 0; i < FILTER_SIZE_C1; i++) {
                 for (int j = 0; j < FILTER_SIZE_C1; j++) {
                     filtersC1[f][i][j] = Math.random() * 0.1 - 0.05;
                 }
             }
             biasesC1[f] = Math.random() * 0.1 - 0.05;
+        }
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C3; f++) {
+            for (int s = 0; s < NUM_FEATURE_MAPS_C1; s++) {
+                for (int i = 0; i < FILTER_SIZE_C3; i++) {
+                    for (int j = 0; j < FILTER_SIZE_C3; j++) {
+                        filtersC3[f][s][i][j] = Math.random() * 0.1 - 0.05;
+                    }
+                }
+            }
+            biasesC3[f] = Math.random() * 0.1 - 0.05;
         }
     }
 
@@ -74,9 +91,9 @@ public class LeNet5 {
     public double[][][] convLayerC1(double[][] inputImage) {
         int inputSize = inputImage.length;
         int outputSize = inputSize - FILTER_SIZE_C1 + 1; // TODO: consider calculating with the stride
-        double[][][] outputFeatureMaps = new double[NUM_FILTERS_C1][outputSize][outputSize];
+        double[][][] outputFeatureMaps = new double[NUM_FEATURE_MAPS_C1][outputSize][outputSize];
 
-        for (int f = 0; f < NUM_FILTERS_C1; f++) {
+        for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
             for (int i = 0; i < outputSize; i++) {
                 for (int j = 0; j < outputSize; j++) {
                     double sum = 0.0;
@@ -115,6 +132,83 @@ public class LeNet5 {
                     }
 
                     outputFeatureMaps[f][i][j] = sum / (POOL_SIZE_S2 * POOL_SIZE_S2);
+                }
+            }
+        }
+
+        return outputFeatureMaps;
+    }
+
+    private int[][] getC3Connectivity() {
+        return new int[][] {
+                {0, 1, 2},
+                {1, 2, 3},
+                {2, 3, 4},
+                {3, 4, 5},
+                {4, 5, 0},
+                {5, 0, 1}, // First 6
+                {0, 1, 2, 3},
+                {1, 2, 3, 4},
+                {2, 3, 4, 5},
+                {3, 4, 5, 0},
+                {4, 5, 0, 1},
+                {5, 0, 1, 2}, // Second 6
+                {0, 1, 3, 4},
+                {1, 2, 4, 5},
+                {2, 3, 5, 0}, // Next 3
+                {0, 1, 2, 3, 4, 5} // Last
+        };
+    }
+
+    public double[][][] convLayerC3(double[][][] inputFeatureMaps) {
+        int inputSize = inputFeatureMaps[0].length;
+        int outputSize = inputSize - FILTER_SIZE_C3 + 1;
+        double[][][] outputFeatureMaps = new double[NUM_FEATURE_MAPS_C3][outputSize][outputSize];
+
+        int[][] connectivity = getC3Connectivity();
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C3; f++) {
+            for (int i = 0; i < outputSize; i++) {
+                for (int j = 0; j < outputSize; j++) {
+                    double sum = 0.0;
+
+                    for (int connectedMap : connectivity[f]) {
+                        for (int fi = 0; fi < FILTER_SIZE_C3; fi++) {
+                            for (int fj = 0; fj < FILTER_SIZE_C3; fj++) {
+                                sum += inputFeatureMaps[connectedMap][i + fi][j + fj] * filtersC3[f][connectedMap][fi][fj];
+                            }
+                        }
+                    }
+
+                    sum += biasesC3[f];
+
+                    outputFeatureMaps[f][i][j] = activation(sum);
+                }
+            }
+        }
+
+        return outputFeatureMaps;
+    }
+
+    public double[][][] poolLayerS4(double[][][] inputFeatureMaps) {
+        int numFeatureMaps = inputFeatureMaps.length;
+        int inputSize = inputFeatureMaps[0].length;
+        int outputSize = inputSize / POOL_SIZE_S4;
+
+        double[][][] outputFeatureMaps = new double[numFeatureMaps][outputSize][outputSize];
+
+        for (int f = 0; f < numFeatureMaps; f++) {
+            for (int i = 0; i < outputSize; i++) {
+                for (int j = 0; j < outputSize; j++) {
+                    double sum = 0.0;
+
+                    for (int pi = 0; pi < POOL_SIZE_S4; pi++) {
+                        for (int pj = 0; pj < POOL_SIZE_S4; pj++) {
+                            sum += inputFeatureMaps[f][i * STRIDE_S4 + pi][j * STRIDE_S4 + pj];
+                        }
+                    }
+
+                    outputFeatureMaps[f][i][j] = sum / (POOL_SIZE_S4 * POOL_SIZE_S4);
                 }
             }
         }
