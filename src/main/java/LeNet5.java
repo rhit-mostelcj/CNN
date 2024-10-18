@@ -11,13 +11,17 @@ public class LeNet5 {
     private static final int FILTER_SIZE_C3 = 5;
     private static final int POOL_SIZE_S4 = 2;
     private static final int STRIDE_S4 = 2;
+    private static final int NUM_FEATURE_MAPS_C5 = 120;
+    private static final int FILTER_SIZE_C5 = 5;
 
     private List<int[][]> images;
     private List<Integer> labels;
     private double[][][] filtersC1 = new double[NUM_FEATURE_MAPS_C1][FILTER_SIZE_C1][FILTER_SIZE_C1];
     private double[][][][] filtersC3 = new double[NUM_FEATURE_MAPS_C3][NUM_FEATURE_MAPS_C1][FILTER_SIZE_C3][FILTER_SIZE_C3];
+    private double[][][][] filtersC5 = new double[NUM_FEATURE_MAPS_C5][NUM_FEATURE_MAPS_C3][FILTER_SIZE_C5][FILTER_SIZE_C5];
     private double[] biasesC1 = new double[NUM_FEATURE_MAPS_C1];
     private double[] biasesC3 = new double[NUM_FEATURE_MAPS_C3];
+    private double[] biasesC5 = new double[NUM_FEATURE_MAPS_C5];
 
 
     public LeNet5(List<int[][]> images, List<Integer> labels) {
@@ -45,6 +49,17 @@ public class LeNet5 {
                 }
             }
             biasesC3[f] = Math.random() * 0.1 - 0.05;
+        }
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C5; f++) {
+            for (int s = 0; s < NUM_FEATURE_MAPS_C3; s++) {
+                for (int i = 0; i < FILTER_SIZE_C5; i++) {
+                    for (int j = 0; j < FILTER_SIZE_C5; j++) {
+                        filtersC5[f][s][i][j] = Math.random() * 0.1 - 0.05;
+                    }
+                }
+            }
+            biasesC5[f] = Math.random() * 0.1 - 0.05;
         }
     }
 
@@ -88,9 +103,9 @@ public class LeNet5 {
         return Math.tanh(a);
     }
 
-    public double[][][] convLayerC1(double[][] inputImage) {
+    public double[][][] convLayerC1(int[][] inputImage) {
         int inputSize = inputImage.length;
-        int outputSize = inputSize - FILTER_SIZE_C1 + 1; // TODO: consider calculating with the stride
+        int outputSize = inputSize - FILTER_SIZE_C1 + 1;
         double[][][] outputFeatureMaps = new double[NUM_FEATURE_MAPS_C1][outputSize][outputSize];
 
         for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
@@ -100,7 +115,7 @@ public class LeNet5 {
 
                     for (int fi = 0; fi < FILTER_SIZE_C1; fi++) {
                         for (int fj = 0; fj < FILTER_SIZE_C1; fj++) {
-                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj]; // TODO: consider using stride
+                            sum += inputImage[i + fi][j + fj] * filtersC1[f][fi][fj];
                         }
                     }
 
@@ -116,7 +131,7 @@ public class LeNet5 {
     public double[][][] poolLayerS2(double[][][] inputFeatureMaps) {
         int numFeatureMaps = inputFeatureMaps.length;
         int inputSize = inputFeatureMaps[0].length;
-        int outputSize = inputSize / POOL_SIZE_S2; // TODO: consider calculating with the stride
+        int outputSize = inputSize / POOL_SIZE_S2;
 
         double[][][] outputFeatureMaps = new double[numFeatureMaps][outputSize][outputSize];
 
@@ -211,6 +226,28 @@ public class LeNet5 {
                     outputFeatureMaps[f][i][j] = sum / (POOL_SIZE_S4 * POOL_SIZE_S4);
                 }
             }
+        }
+
+        return outputFeatureMaps;
+    }
+
+    public double[] convLayerC5(double[][][] inputFeatureMaps) {
+        double[] outputFeatureMaps = new double[NUM_FEATURE_MAPS_C5];
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C5; f++) {
+            double sum = 0.0;
+
+            for (int s = 0; s < NUM_FEATURE_MAPS_C3; s++) {
+                for (int fi = 0; fi < FILTER_SIZE_C5; fi++) {
+                    for (int fj = 0; fj < FILTER_SIZE_C5; fj++) {
+                        sum += inputFeatureMaps[s][fi][fj] * filtersC5[f][s][fi][fj];
+                    }
+                }
+            }
+
+            sum += biasesC5[f];
+
+            outputFeatureMaps[f] = activation(sum);
         }
 
         return outputFeatureMaps;
