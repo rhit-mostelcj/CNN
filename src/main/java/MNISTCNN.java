@@ -14,26 +14,46 @@ public class MNISTCNN {
             List<int[][]> images = readImages(trainImagesPath);
             List<Integer> labels = readLabels(trainLabelsPath);
 
-            int c = 0;
-            for (int[][] image : images) {
-                if (c == 10) {
-                    break;
-                }
-                displayImage(image, image[0].length, image.length);
-                c++;
-            }
+            LeNet5 leNet5 = new LeNet5(images, labels);
+            int[][] testImage = images.get(0);
+            int[][] paddedTestImage = leNet5.addPadding(testImage);
 
-            c = 0;
-            for (int label : labels) {
-                if (c == 10) {
-                    break;
-                }
+            print2DArray(testImage);
+            System.out.println();
+            print2DArray(paddedTestImage);
 
-                System.out.println("Label " + (c + 1) + ": " + label);
-                c++;
-            }
+            displayImage(testImage);
+            displayImage(paddedTestImage);
+
+//            int c = 0;
+//            for (int[][] image : images) {
+//                if (c == 10) {
+//                    break;
+//                }
+//                displayImage(image, image[0].length, image.length);
+//                c++;
+//            }
+//
+//            c = 0;
+//            for (int label : labels) {
+//                if (c == 10) {
+//                    break;
+//                }
+//
+//                System.out.println("Label " + (c + 1) + ": " + label);
+//                c++;
+//            }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void print2DArray(int[][] array) {
+        for (int row = 0; row < array.length; row++) {
+            for (int col = 0; col < array[0].length; col++) {
+                System.out.print(array[row][col] + " ");
+            }
+            System.out.println();
         }
     }
 
@@ -97,8 +117,10 @@ public class MNISTCNN {
         return (bis.read() << 24) | (bis.read() << 16) | (bis.read() << 8) | bis.read();
     }
 
-    public static void displayImage(int[][] image, int width, int height) {
+    public static void displayImage(int[][] image) {
         JFrame window = new JFrame("foo");
+        int width = image[0].length;
+        int height = image.length;
         window.setSize((width+2)*16, (height+2)*16 + 20);
         PixelGrid pGrid = drawImage(image, width, height);
         window.add(pGrid);
@@ -109,9 +131,9 @@ public class MNISTCNN {
 
     public static PixelGrid drawImage(int[][] image, int width, int height) {
         PixelGrid grid = new PixelGrid(width, height);
-        for(int i = 0; i<28; i++) {
-            for(int j = 0; j<28; j++) {
-                grid.setPixel(image[i][j],j,i);
+        for(int i = 0; i < height; i++) {
+            for(int j = 0; j < width; j++) {
+                grid.setPixel(image[i][j], j, i);
             }
         }
         return grid;
