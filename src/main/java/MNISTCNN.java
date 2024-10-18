@@ -18,6 +18,9 @@ public class MNISTCNN {
             int[][] testImage = images.get(0);
             int[][] paddedTestImage = leNet5.addPadding(testImage);
 
+            testImage = leNet5.convertToBlackAndWhite(testImage);
+            paddedTestImage = leNet5.convertToBlackAndWhite(paddedTestImage);
+
             print2DArray(testImage);
             System.out.println();
             print2DArray(paddedTestImage);
@@ -68,9 +71,9 @@ public class MNISTCNN {
             int numberOfRows = readInt(bis);
             int numberOfColumns = readInt(bis);
 
-            System.out.println("Magic Number: " + magicNumber);
-            System.out.println("Number of Images: " + numberOfImages);
-            System.out.println("Image Size: " + numberOfRows + "x" + numberOfColumns);
+//            System.out.println("Magic Number: " + magicNumber);
+//            System.out.println("Number of Images: " + numberOfImages);
+//            System.out.println("Image Size: " + numberOfRows + "x" + numberOfColumns);
 
             // Read images
             for (int i = 0; i < numberOfImages; i++) {
@@ -99,8 +102,8 @@ public class MNISTCNN {
 
 //            numberOfItems = TESTINGSIZE;
 
-            System.out.println("Magic Number: " + magicNumber);
-            System.out.println("Number of Labels: " + numberOfItems);
+//            System.out.println("Magic Number: " + magicNumber);
+//            System.out.println("Number of Labels: " + numberOfItems);
 
             // Read labels
             for (int i = 0; i < numberOfItems; i++) {

@@ -13,7 +13,8 @@ public class PixelGrid extends JPanel {
     }
 
     public void setPixel(int color, int x, int y) {
-        color = 255-color;
+//        color = 255-color;
+        color = color == 0 ? 255 : 0;
         x = convertGridIndexToActual(x);
         y = convertGridIndexToActual(y);
         for(int i = 0; i<PIXEL_SIZE; i++) {
