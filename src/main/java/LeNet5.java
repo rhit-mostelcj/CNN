@@ -57,8 +57,9 @@ public class LeNet5 {
 
     public double[] forwardPass(int[][] image) {
         MNISTCNN.displayImage(image, "Original");
-        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
-        int[][] input = addPadding(blackAndWhiteImage);
+//        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
+//        int[][] input = addPadding(blackAndWhiteImage);
+        int[][] input = addPadding(image);
 
         double[][][] c1 = convLayerC1(input);
         MNISTCNN.displayImage(convertDoubleToInt(c1[0]), "C1");
