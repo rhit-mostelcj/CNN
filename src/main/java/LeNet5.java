@@ -27,6 +27,7 @@ public class LeNet5 {
     private double[] biasesC5 = new double[NUM_FEATURE_MAPS_C5];
     private double[] biasesF6 = new double[NUM_UNITS_F6];
 
+    private int[][] input;
     private double[][][] c1Output;
     private double[][][] s2Output;
     private double[][][] c3Output;
@@ -134,7 +135,7 @@ public class LeNet5 {
         MNISTCNN.displayImage(image, "Original");
 //        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
 //        int[][] input = addPadding(blackAndWhiteImage);
-        int[][] input = addPadding(image);
+        input = addPadding(image);
 
         c1Output = convLayerC1(input);
 //        MNISTCNN.displayImage(convertDoubleToInt(c1[0]), "C1");
@@ -161,9 +162,9 @@ public class LeNet5 {
         double[] dOutput = computeOutputGradient(predicted, target);
         double[] dF6 = computeF6Gradient(dOutput);
         double[] dC5 = computeC5Gradient(dF6);
-        double[][] dS4 = computeS4Gradient(dC5);
-        double[][] dC3 = computeC3Gradient(dS4);
-        double[][] dS2 = computeS2Gradient(dC3);
+        double[][][] dS4 = computeS4Gradient(dC5);
+        double[][][] dC3 = computeC3Gradient(dS4);
+        double[][][] dS2 = computeS2Gradient(dC3);
         backpropagateToC1(dS2);
     }
 
@@ -184,17 +185,13 @@ public class LeNet5 {
                 sum += dOutput[j] * weightsOutput[j][i];
             }
 
-            dF6[i] = sum;
+            dF6[i] = sum * tanhDerivative(f6Output[i]);
         }
 
         for (int j = 0; j < NUM_OUTPUT_CLASSES; j++) {
             for (int i = 0; i < NUM_UNITS_F6; i++) {
                 weightsOutput[j][i] -= learningRate * dOutput[j] * f6Output[i];
             }
-        }
-
-        for (int i = 0; i < NUM_UNITS_F6; i++) {
-            dF6[i] *= tanhDerivative(f6Output[i]);
         }
 
         return dF6;
@@ -208,37 +205,137 @@ public class LeNet5 {
                 sum += dF6[j] * weightsF6[j][i];
             }
 
-            dC5[i] = sum;
+            // TODO: might not need derivative
+            dC5[i] = sum * tanhDerivative(c5Output[i]);
         }
 
         for (int j = 0; j < NUM_UNITS_F6; j++) {
             for (int i = 0; i < NUM_FEATURE_MAPS_C5; i++) {
                 weightsF6[j][i] -= learningRate * dF6[j] * c5Output[i];
-//                biasesF6[i] -= learningRate * dF6[]
             }
-        }
 
-        for (int i = 0; i < NUM_UNITS_F6; i++) {
-            dF6[i] *= tanhDerivative(f6Output[i]);
+            biasesF6[j] -= learningRate * dF6[j];
         }
 
         return dC5;
     }
 
-    private double[][] computeS4Gradient(double[] dC5) {
-        return null; // Replace with actual logic
+    private double[][][] computeS4Gradient(double[] dC5) {
+        int numFilters = s4Output.length;
+        int xSize = s4Output[0].length;
+        int ySize = s4Output[0][0].length;
+        double[][][] dS4 = new double[numFilters][xSize][ySize];
+
+        for (int f = 0; f < numFilters; f++) {
+            for (int x = 0; x < xSize; x++) {
+                for (int y = 0; y < ySize; y++) {
+                    double sum = 0.0;
+                    for (int i = 0; i < NUM_FEATURE_MAPS_C5; i++) {
+                        sum += dC5[i] * weightsC5[i][f][x][y];
+                    }
+
+                    // TODO: might not need pool derivative
+                    dS4[f][x][y] = sum * poolDerivative();
+                }
+            }
+        }
+
+        for (int i = 0; i < NUM_FEATURE_MAPS_C5; i++) {
+            for (int f = 0; f < numFilters; f++) {
+                for (int x = 0; x < xSize; x++) {
+                    for (int y = 0; y < ySize; y++) {
+                        weightsC5[i][f][x][y] -= learningRate * dC5[i] * s4Output[f][x][y];
+                    }
+                }
+            }
+
+            biasesC5[i] -= learningRate * dC5[i];
+        }
+
+        return dS4;
     }
 
-    private double[][] computeC3Gradient(double[][] dS4) {
-        return null; // Replace with actual logic
+    private double[][][] computeC3Gradient(double[][][] dS4) {
+        int numFilters = c3Output.length;
+        int featureSize = c3Output[0].length;
+        double[][][] dC3 = new double[numFilters][featureSize][featureSize];
+
+        for (int f = 0; f < numFilters; f++) {
+            for (int i = 0; i < featureSize; i++) {
+                for (int j = 0; j < featureSize; j++) {
+                    // TODO: might need tanhderivative of c3 output
+                    dC3[f][i][j] = dS4[f][i / 2][j / 2] * poolDerivative();
+                }
+            }
+        }
+
+        return dC3;
     }
 
-    private double[][] computeS2Gradient(double[][] dC3) {
-        return null; // Replace with actual logic
+    private double[][][] computeS2Gradient(double[][][] dC3) {
+        int numFilters = s2Output.length;
+        int featureSize = s2Output[0].length - FILTER_SIZE_C3 + 1;
+        double[][][] dS2 = new double[numFilters][s2Output[0].length][s2Output[0].length];
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C3; f++) {
+            for (int i = 0; i < featureSize; i++) {
+                for (int j = 0; j < featureSize; j++) {
+                    for (int connectedMap : getC3Connectivity()[f]) {
+                        for (int fi = 0; fi < FILTER_SIZE_C3; fi++) {
+                            for (int fj = 0; fj < FILTER_SIZE_C3; fj++) {
+                                dS2[connectedMap][i + fi][j + fj] += dC3[f][i][j] * weightsC3[f][connectedMap][fi][fj];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C3; f++) {
+            for (int i = 0; i < featureSize; i++) {
+                for (int j = 0; j < featureSize; j++) {
+                    for (int connectedMap : getC3Connectivity()[f]) {
+                        for (int fi = 0; fi < FILTER_SIZE_C3; fi++) {
+                            for (int fj = 0; fj < FILTER_SIZE_C3; fj++) {
+                                weightsC3[f][connectedMap][fi][fj] -= learningRate * dC3[f][i][j] * s2Output[connectedMap][i + fi][j + fj];
+                            }
+                        }
+                    }
+
+                    biasesC3[f] -= learningRate * dC3[f][i][j];
+                }
+            }
+        }
+
+        return dS2;
     }
 
-    private void backpropagateToC1(double[][] dS2) {
+    private void backpropagateToC1(double[][][] dS2) {
+        int featureSize = c1Output[0].length;
 
+        double[][][] dC1 = new double[NUM_FEATURE_MAPS_C1][featureSize][featureSize];
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
+            for (int i = 0; i < featureSize; i++) {
+                for (int j = 0; j < featureSize; j++) {
+                    dC1[f][i][j] = dS2[f][i / 2][j / 2] * poolDerivative();
+                }
+            }
+        }
+
+        for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
+            for (int i = 0; i < featureSize; i++) {
+                for (int j = 0; j < featureSize; j++) {
+                    for (int fi = 0; fi < FILTER_SIZE_C1; fi++) {
+                        for (int fj = 0; fj < FILTER_SIZE_C1; fj++) {
+                            weightsC1[f][fi][fj] -= learningRate * dC1[f][i][j] * input[i + fi][j + fj];
+                        }
+                    }
+
+                    biasesC1[f] -= learningRate * dC1[f][i][j];
+                }
+            }
+        }
     }
 
     private int[][] convertToBlackAndWhite(int[][] image) {
@@ -289,7 +386,7 @@ public class LeNet5 {
         return 1 - x * x;
     }
 
-    private double poolDerivative(double output) {
+    private double poolDerivative() {
         return 1.0 / 4.0;
     }
 
