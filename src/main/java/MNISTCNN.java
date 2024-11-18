@@ -23,18 +23,19 @@ public class MNISTCNN {
             System.out.println("Done reading test files");
 
             LeNet5 leNet5 = new LeNet5();
-            int maxEpochs = 15;
-            leNet5.optimizeHyperParameters(maxEpochs, trainImages, trainLabels, testImages, testLabels);
-//            int epochs = 1;
-//            leNet5.trainNetwork(epochs, trainImages, trainLabels);
-//
-//            System.out.println("Testing training data");
-//            double trainAccuracy = leNet5.testNetwork(trainImages, trainLabels);
-//            System.out.println("Training accuracy: " + (Math.round(trainAccuracy * 10000.0) / 100.0) + "%");
-//
-//            System.out.println("Testing testing data");
-//            double testAccuracy = leNet5.testNetwork(testImages, testLabels);
-//            System.out.println("Test accuracy: " + (Math.round(testAccuracy * 10000.0) / 100.0) + "%");
+//            int maxEpochs = 15;
+//            leNet5.optimizeHyperParameters(maxEpochs, trainImages, trainLabels, testImages, testLabels);
+            int epochs = 1;
+            leNet5.trainNetwork(epochs, trainImages, trainLabels);
+
+            System.out.println("Testing Network");
+            double trainAccuracy = leNet5.testNetwork(trainImages, trainLabels);
+            System.out.println("Training accuracy: " + (Math.round(trainAccuracy * 10000.0) / 100.0) + "%");
+
+            double testAccuracy = leNet5.testNetwork(testImages, testLabels);
+            System.out.println("Test accuracy: " + (Math.round(testAccuracy * 10000.0) / 100.0) + "%");
+
+            leNet5.forwardPassWithImage(trainImages.get(0));
         } catch (IOException e) {
             e.printStackTrace();
         }

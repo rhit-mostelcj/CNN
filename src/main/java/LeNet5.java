@@ -3,7 +3,6 @@ import java.util.List;
 import java.util.Random;
 
 public class LeNet5 {
-
     private static final int PADDING = 2;
     private static final int NUM_FEATURE_MAPS_C1 = 6;
     private static final int FILTER_SIZE_C1 = 5;
@@ -74,13 +73,11 @@ public class LeNet5 {
         for (int f = 0; f < NUM_FEATURE_MAPS_C1; f++) {
             for (int i = 0; i < FILTER_SIZE_C1; i++) {
                 for (int j = 0; j < FILTER_SIZE_C1; j++) {
-//                    weightsC1[f][i][j] = Math.random() * 0.1 - 0.05;
                     double std = Math.sqrt(2.0 / (FILTER_SIZE_C1 * FILTER_SIZE_C1));
                     weightsC1[f][i][j] = random.nextGaussian() * std;
                 }
             }
             biasesC1[f] = Math.random() * 0.1 - 0.05;
-//            biasesC1[f] = 0;
         }
 
         for (int f = 0; f < NUM_FEATURE_MAPS_C3; f++) {
@@ -88,15 +85,10 @@ public class LeNet5 {
                 for (int i = 0; i < FILTER_SIZE_C3; i++) {
                     for (int j = 0; j < FILTER_SIZE_C3; j++) {
                         weightsC3[f][s][i][j] = Math.random() * 0.1 - 0.05;
-//                        weightsC3[f][s][i][j] = 0;
-//                        if (i == FILTER_SIZE_C3 / 2 + 1 && j == FILTER_SIZE_C3 / 2 + 1) {
-//                            weightsC3[f][s][i][j] = 1;
-//                        }
                     }
                 }
             }
             biasesC3[f] = Math.random() * 0.1 - 0.05;
-//            biasesC3[f] = 0;
         }
 
         for (int f = 0; f < NUM_FEATURE_MAPS_C5; f++) {
@@ -104,30 +96,22 @@ public class LeNet5 {
                 for (int i = 0; i < FILTER_SIZE_C5; i++) {
                     for (int j = 0; j < FILTER_SIZE_C5; j++) {
                         weightsC5[f][s][i][j] = Math.random() * 0.1 - 0.05;
-//                        weightsC5[f][s][i][j] = 0;
-//                        if (i == FILTER_SIZE_C5 / 2 + 1 && j == FILTER_SIZE_C5 / 2 + 1) {
-//                            weightsC5[f][s][i][j] = 1;
-//                        }
                     }
                 }
             }
             biasesC5[f] = Math.random() * 0.1 - 0.05;
-//            biasesC5[f] = 0;
         }
 
         for (int i = 0; i < NUM_UNITS_F6; i++) {
             for (int j = 0; j < NUM_FEATURE_MAPS_C5; j++) {
                 weightsF6[i][j] = Math.random() * 0.1 - 0.05;
-//                weightsF6[i][j] = 1.0;
             }
             biasesF6[i] = Math.random() * 0.1 - 0.05;
-//            biasesF6[i] = 0;
         }
 
         for (int i = 0; i < NUM_OUTPUT_CLASSES; i++) {
             for (int j = 0; j < NUM_UNITS_F6; j++) {
                 weightsOutput[i][j] = Math.random() * 0.1 - 0.05;
-//                weightsOutput[i][j] = 1.0;
             }
         }
     }
@@ -201,27 +185,35 @@ public class LeNet5 {
         return index;
     }
 
-    private double[] forwardPass(int[][] image) {
-//        MNISTCNN.displayImage(image, "Original");
-//        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
-//        int[][] input = addPadding(blackAndWhiteImage);
+    public double[] forwardPassWithImage(int[][] image) {
+        MNISTCNN.displayImage(image, "Original");
         input = addPadding(image);
-
         c1Output = convLayerC1(input);
-//        MNISTCNN.displayImage(convertDoubleToInt(c1[0]), "C1");
+        MNISTCNN.displayImage(convertDoubleToInt(c1Output[0]), "C1");
         s2Output = poolLayerS2(c1Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(s2[0]), "S2");
+        MNISTCNN.displayImage(convertDoubleToInt(s2Output[0]), "S2");
         c3Output = convLayerC3(s2Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(c3[0]), "C3");
+        MNISTCNN.displayImage(convertDoubleToInt(c3Output[0]), "C3");
         s4Output = poolLayerS4(c3Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(s4[0]), "S4");
+        MNISTCNN.displayImage(convertDoubleToInt(s4Output[0]), "S4");
         c5Output = convLayerC5(s4Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(c5), "C5");
+        MNISTCNN.displayImage(convertDoubleToInt(c5Output), "C5");
         f6Output = layerF6(c5Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(f6), "F6");
+        MNISTCNN.displayImage(convertDoubleToInt(f6Output), "F6");
         double[] output = layerOutput(f6Output);
-//        MNISTCNN.displayImage(convertDoubleToInt(output), "Output");
+        MNISTCNN.displayImage(convertDoubleToInt(output), "Output");
         return output;
+    }
+
+    private double[] forwardPass(int[][] image) {
+        input = addPadding(image);
+        c1Output = convLayerC1(input);
+        s2Output = poolLayerS2(c1Output);
+        c3Output = convLayerC3(s2Output);
+        s4Output = poolLayerS4(c3Output);
+        c5Output = convLayerC5(s4Output);
+        f6Output = layerF6(c5Output);
+        return layerOutput(f6Output);
     }
 
     private void backPropPass(double[] predicted, int targetNumber) {
@@ -275,7 +267,6 @@ public class LeNet5 {
                 sum += dF6[j] * weightsF6[j][i];
             }
 
-            // TODO: might not need derivative
             dC5[i] = sum * tanhDerivative(c5Output[i]);
         }
 
@@ -304,7 +295,6 @@ public class LeNet5 {
                         sum += dC5[i] * weightsC5[i][f][x][y];
                     }
 
-                    // TODO: might not need pool derivative
                     dS4[f][x][y] = sum * poolDerivative();
                 }
             }
@@ -333,7 +323,6 @@ public class LeNet5 {
         for (int f = 0; f < numFilters; f++) {
             for (int i = 0; i < featureSize; i++) {
                 for (int j = 0; j < featureSize; j++) {
-                    // TODO: might need tanhderivative of c3 output
                     dC3[f][i][j] = dS4[f][i / 2][j / 2] * poolDerivative();
                 }
             }
@@ -478,7 +467,6 @@ public class LeNet5 {
 
                     sum += biasesC1[f];
                     outputFeatureMaps[f][i][j] = activation(sum);
-//                    outputFeatureMaps[f][i][j] = sum;
                 }
             }
         }
@@ -556,7 +544,6 @@ public class LeNet5 {
                     sum += biasesC3[f];
 
                     outputFeatureMaps[f][i][j] = activation(sum);
-//                    outputFeatureMaps[f][i][j] = sum;
                 }
             }
         }
@@ -607,7 +594,6 @@ public class LeNet5 {
             sum += biasesC5[f];
 
             outputFeatureMaps[f] = activation(sum);
-//            outputFeatureMaps[f] = sum;
         }
 
         return outputFeatureMaps;
@@ -625,7 +611,6 @@ public class LeNet5 {
             sum += biasesF6[i];
 
             outputVector[i] = activation(sum);
-//            outputVector[i] = sum;
         }
 
         return outputVector;
@@ -638,12 +623,6 @@ public class LeNet5 {
         for (int i = 0; i < NUM_OUTPUT_CLASSES; i++) {
             double sum = 0.0;
 
-//            for (int j = 0; j < inputSize; j++) {
-//                sum += Math.pow(inputVector[j] - weightsOutput[i][j], 2);
-//            }
-//
-//            outputVector[i] = sum;
-
             for (int j = 0; j < inputSize; j++) {
                 sum += inputVector[j] * weightsOutput[i][j];
             }
@@ -652,5 +631,4 @@ public class LeNet5 {
 
         return outputVector;
     }
-
 }
