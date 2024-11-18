@@ -25,7 +25,7 @@ public class MNISTCNN {
             LeNet5 leNet5 = new LeNet5();
 //            int maxEpochs = 15;
 //            leNet5.optimizeHyperParameters(maxEpochs, trainImages, trainLabels, testImages, testLabels);
-            int epochs = 1;
+            int epochs = 5;
             leNet5.trainNetwork(epochs, trainImages, trainLabels);
 
             System.out.println("Testing Network");
