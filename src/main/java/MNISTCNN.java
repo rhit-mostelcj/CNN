@@ -21,8 +21,10 @@ public class MNISTCNN {
             LeNet5 leNet5 = new LeNet5();
             double[] output = leNet5.forwardPass(testImages.get(0));
 
+            int k = 0;
             for (double prob : output) {
-                System.out.println(prob);
+                System.out.println(k + ": " + prob);
+                k++;
             }
         } catch (IOException e) {
             e.printStackTrace();
