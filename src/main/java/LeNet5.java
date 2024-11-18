@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class LeNet5 {
@@ -131,7 +132,54 @@ public class LeNet5 {
         }
     }
 
-    public double[] forwardPass(int[][] image) {
+    public void trainNetwork(int epochs, List<int[][]> trainImages, List<Integer> trainLabels) {
+        System.out.println("Training started");
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            System.out.println("Epoch " + (epoch + 1) + "/" + epochs);
+            for (int i = 0; i < trainImages.size(); i++) {
+                int[][] image = trainImages.get(i);
+                int label = trainLabels.get(i);
+
+                double[] predicted = forwardPass(image);
+                backPropPass(predicted, label);
+            }
+        }
+        System.out.println("Training complete");
+    }
+
+    public double testNetwork(List<int[][]> testImages, List<Integer> testLabels) {
+        int totalImages = testImages.size();
+        int numCorrect = 0;
+
+        for (int i = 0; i < totalImages; i++) {
+            int[][] image = testImages.get(i);
+            int label = testLabels.get(i);
+
+            double[] outputs = forwardPass(image);
+            int guess = getPrediction(outputs);
+
+            if (guess == label) {
+                numCorrect++;
+            }
+        }
+
+        return (double) numCorrect / totalImages;
+    }
+
+    private int getPrediction(double[] outputs) {
+        int index = 0;
+        double max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < outputs.length; i++) {
+            if (outputs[i] > max) {
+                max = outputs[i];
+                index = i;
+            }
+        }
+
+        return index;
+    }
+
+    private double[] forwardPass(int[][] image) {
         MNISTCNN.displayImage(image, "Original");
 //        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
 //        int[][] input = addPadding(blackAndWhiteImage);

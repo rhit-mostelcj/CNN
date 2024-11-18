@@ -13,19 +13,24 @@ public class MNISTCNN {
         String testImagesPath = "t10k-images-idx3-ubyte";
         String testLabelsPath = "t10k-labels-idx1-ubyte";
         try {
+            System.out.println("Reading in training files");
             List<int[][]> trainImages = readImages(trainImagesPath);
             List<Integer> trainLabels = readLabels(trainLabelsPath);
-            List<int[][]> testImages = readImages(testImagesPath);
-            List<Integer> testLabels = readLabels(testLabelsPath);
+            System.out.println("Done reading training files");
 
             LeNet5 leNet5 = new LeNet5();
-            double[] output = leNet5.forwardPass(testImages.get(0));
+            int epochs = 1;
+            leNet5.trainNetwork(epochs, trainImages, trainLabels);
 
-            int k = 0;
-            for (double prob : output) {
-                System.out.println(k + ": " + prob);
-                k++;
-            }
+            System.out.println("Reading in test files");
+            List<int[][]> testImages = readImages(testImagesPath);
+            List<Integer> testLabels = readLabels(testLabelsPath);
+            System.out.println("Done reading test files");
+
+            double trainAccuracy = leNet5.testNetwork(trainImages, trainLabels);
+            System.out.println("Training accuracy: " + trainAccuracy);
+            double testAccuracy = leNet5.testNetwork(testImages, testLabels);
+            System.out.println("Test accuracy: " + testAccuracy);
         } catch (IOException e) {
             e.printStackTrace();
         }
