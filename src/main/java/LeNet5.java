@@ -132,10 +132,9 @@ public class LeNet5 {
         }
     }
 
-    public void trainNetwork(int epochs, List<int[][]> trainImages, List<Integer> trainLabels) {
-        System.out.println("Training started");
-        for (int epoch = 0; epoch < epochs; epoch++) {
-            System.out.println("Epoch " + (epoch + 1) + "/" + epochs);
+    public void optimizeHyperParameters(int maxEpochs, List<int[][]> trainImages, List<Integer> trainLabels, List<int[][]> testImages, List<Integer> testLabels) {
+        System.out.println("Optimizing epochs");
+        for (int epoch = 1; epoch <= maxEpochs; epoch++) {
             for (int i = 0; i < trainImages.size(); i++) {
                 int[][] image = trainImages.get(i);
                 int label = trainLabels.get(i);
@@ -143,6 +142,29 @@ public class LeNet5 {
                 double[] predicted = forwardPass(image);
                 backPropPass(predicted, label);
             }
+            System.out.println("Epoch " + epoch + "/" + maxEpochs);
+            double trainAccuracy = testNetwork(trainImages, trainLabels);
+            System.out.println("Training accuracy: " + (Math.round(trainAccuracy * 10000.0) / 100.0) + "%");
+
+            double testAccuracy = testNetwork(testImages, testLabels);
+            System.out.println("Test accuracy: " + (Math.round(testAccuracy * 10000.0) / 100.0) + "%");
+            System.out.println();
+        }
+        System.out.println("Done optimizing");
+    }
+
+    public void trainNetwork(int epochs, List<int[][]> trainImages, List<Integer> trainLabels) {
+        System.out.println("Training started");
+        for (int epoch = 1; epoch <= epochs; epoch++) {
+            for (int i = 0; i < trainImages.size(); i++) {
+                int[][] image = trainImages.get(i);
+                int label = trainLabels.get(i);
+
+                double[] predicted = forwardPass(image);
+                backPropPass(predicted, label);
+            }
+            System.out.println("Epoch " + epoch + "/" + epochs);
+
         }
         System.out.println("Training complete");
     }
@@ -180,7 +202,7 @@ public class LeNet5 {
     }
 
     private double[] forwardPass(int[][] image) {
-        MNISTCNN.displayImage(image, "Original");
+//        MNISTCNN.displayImage(image, "Original");
 //        int[][] blackAndWhiteImage = convertToBlackAndWhite(image);
 //        int[][] input = addPadding(blackAndWhiteImage);
         input = addPadding(image);

@@ -17,20 +17,24 @@ public class MNISTCNN {
             List<int[][]> trainImages = readImages(trainImagesPath);
             List<Integer> trainLabels = readLabels(trainLabelsPath);
             System.out.println("Done reading training files");
-
-            LeNet5 leNet5 = new LeNet5();
-            int epochs = 1;
-            leNet5.trainNetwork(epochs, trainImages, trainLabels);
-
             System.out.println("Reading in test files");
             List<int[][]> testImages = readImages(testImagesPath);
             List<Integer> testLabels = readLabels(testLabelsPath);
             System.out.println("Done reading test files");
 
-            double trainAccuracy = leNet5.testNetwork(trainImages, trainLabels);
-            System.out.println("Training accuracy: " + trainAccuracy);
-            double testAccuracy = leNet5.testNetwork(testImages, testLabels);
-            System.out.println("Test accuracy: " + testAccuracy);
+            LeNet5 leNet5 = new LeNet5();
+            int maxEpochs = 15;
+            leNet5.optimizeHyperParameters(maxEpochs, trainImages, trainLabels, testImages, testLabels);
+//            int epochs = 1;
+//            leNet5.trainNetwork(epochs, trainImages, trainLabels);
+//
+//            System.out.println("Testing training data");
+//            double trainAccuracy = leNet5.testNetwork(trainImages, trainLabels);
+//            System.out.println("Training accuracy: " + (Math.round(trainAccuracy * 10000.0) / 100.0) + "%");
+//
+//            System.out.println("Testing testing data");
+//            double testAccuracy = leNet5.testNetwork(testImages, testLabels);
+//            System.out.println("Test accuracy: " + (Math.round(testAccuracy * 10000.0) / 100.0) + "%");
         } catch (IOException e) {
             e.printStackTrace();
         }
